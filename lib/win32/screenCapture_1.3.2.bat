@@ -41,6 +41,10 @@ public class ScreenCapture
 {
 
     static String deviceName = "";
+    static Integer offsetX = null;
+    static Integer offsetY = null;
+    static Integer sizeX = null;
+    static Integer sizeY = null;
     static Image capturedImage = null;
 
     /// Creates an Image object containing a screen shot the active window
@@ -81,9 +85,28 @@ public class ScreenCapture
         return img;
     }
     private static Image CaptureWindowFromDC(IntPtr handle, IntPtr hdcSrc, User32.RECT windowRect){
+        int left = windowRect.left;
+        int top = windowRect.top;
         // get the size
         int width = windowRect.right - windowRect.left;
         int height = windowRect.bottom - windowRect.top;
+        // apply offsets
+        if (offsetX !== null) {
+            left += offsetX;
+            if (sizeX !== null) {
+                width = sizeX;
+            } else {
+                width -= offsetX;
+            }
+        }
+        if (offsetY !== null) {
+            top += offsetY;
+            if (sizeY !== null) {
+                height = sizeY;
+            } else {
+                height -= offsetY;
+            }
+        }
         // create a device context we can copy to
         IntPtr hdcDest = GDI32.CreateCompatibleDC(hdcSrc);
         // create a bitmap we can copy it to,
@@ -92,7 +115,7 @@ public class ScreenCapture
         // select the bitmap object
         IntPtr hOld = GDI32.SelectObject(hdcDest, hBitmap);
         // bitblt over
-        GDI32.BitBlt(hdcDest, 0, 0, width, height, hdcSrc, windowRect.left, windowRect.top, GDI32.SRCCOPY);
+        GDI32.BitBlt(hdcDest, 0, 0, width, height, hdcSrc, left, top, GDI32.SRCCOPY);
         // restore selection
         GDI32.SelectObject(hdcDest, hOld);
         // clean up
@@ -188,6 +211,18 @@ public class ScreenCapture
                 Environment.Exit(9);
             }
             deviceName = arguments[3];
+            if (arguments.Length > 3) {
+                offsetX = arguments[4];
+            }
+            if (arguments.Length > 4) {
+                offsetY = arguments[5];
+            }
+            if (arguments.Length > 5) {
+                sizeX = arguments[6];
+            }
+            if (arguments.Length > 6) {
+                sizeY = arguments[7];
+            }
         }
         else if (arguments.Length > 2)
         {
@@ -218,7 +253,7 @@ public class ScreenCapture
         Console.WriteLine("");
         Console.WriteLine("List the available displays");
         Console.WriteLine("");
-        Console.WriteLine(" " + scriptName + " filename  (/d | /display) displayName");
+        Console.WriteLine(" " + scriptName + " filename  (/d | /display) displayName [offsetX offsetY width height]");
         Console.WriteLine("");
         Console.WriteLine("filename - as above");
         Console.WriteLine("displayName - a display name optained from running the script with /list");
